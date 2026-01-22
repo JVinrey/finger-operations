@@ -45,7 +45,7 @@ if not os.path.exists(model_path):
 base_options = python.BaseOptions(model_asset_path=model_path)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
-    num_hands=2,
+    num_hands=10,  # Aumentado para detectar múltiples manos/personas
     min_hand_detection_confidence=0.5,
     min_hand_presence_confidence=0.5,
     min_tracking_confidence=0.5
@@ -185,6 +185,24 @@ def dibujar_circulo_numero(img, x, y, numero, color, radio=60):
     ty = y + th // 2
     cv2.putText(img, texto, (tx + 2, ty + 2), fuente, escala, (0, 0, 0), 5, cv2.LINE_AA)
     cv2.putText(img, texto, (tx, ty), fuente, escala, (255, 255, 255), 4, cv2.LINE_AA)
+
+
+def dibujar_linea_divisora(img):
+    """Dibuja una línea divisora vertical sutil en el centro de la pantalla"""
+    h, w, _ = img.shape
+    centro_x = w // 2
+    
+    # Línea punteada muy sutil con baja opacidad
+    color_linea = (80, 80, 80)  # Gris oscuro sutil
+    
+    # Dibujar línea punteada (segmentos pequeños)
+    segmento_largo = 15
+    espacio = 20
+    y = 0
+    while y < h:
+        y_fin = min(y + segmento_largo, h)
+        cv2.line(img, (centro_x, y), (centro_x, y_fin), color_linea, 1, cv2.LINE_AA)
+        y += segmento_largo + espacio
 
 
 def dibujar_landmarks(img, hand_landmarks, handedness):
@@ -409,9 +427,8 @@ def dibujar_pantalla_calculo(img, operacion, num_izq, num_der, resultado):
     h, w, _ = img.shape
     op = operaciones[operacion]
     
-    # Línea divisoria central sutil (solo en la parte superior e inferior)
-    cv2.line(img, (w//2, 0), (w//2, 80), (100, 100, 50), 2)
-    cv2.line(img, (w//2, h - 80), (w//2, h), (100, 100, 50), 2)
+    # Línea divisoria central sutil punteada
+    dibujar_linea_divisora(img)
     
     # ===== PANEL IZQUIERDO =====
     panel_izq_x = 10
@@ -469,23 +486,22 @@ def realizar_operacion(num_izq, num_der, operacion):
 
 
 def clasificar_manos_por_posicion(manos, ancho_pantalla):
-    """Clasifica las manos según su posición X"""
+    """Clasifica las manos según su posición X y suma todos los dedos de cada lado"""
     if len(manos) == 0:
         return 0, 0
     
-    if len(manos) == 1:
-        mano = manos[0]
-        if mano["centro_x"] < ancho_pantalla // 2:
-            return mano["dedos"], 0
+    centro = ancho_pantalla // 2
+    dedos_izquierda = 0
+    dedos_derecha = 0
+    
+    # Sumar todos los dedos de las manos en cada lado
+    for mano in manos:
+        if mano["centro_x"] < centro:
+            dedos_izquierda += mano["dedos"]
         else:
-            return 0, mano["dedos"]
+            dedos_derecha += mano["dedos"]
     
-    mano1, mano2 = manos[0], manos[1]
-    
-    if mano1["centro_x"] < mano2["centro_x"]:
-        return mano1["dedos"], mano2["dedos"]
-    else:
-        return mano2["dedos"], mano1["dedos"]
+    return dedos_izquierda, dedos_derecha
 
 
 # ============================================
