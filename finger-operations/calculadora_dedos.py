@@ -45,7 +45,7 @@ if not os.path.exists(model_path):
 base_options = python.BaseOptions(model_asset_path=model_path)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
-    num_hands=10,  # Aumentado para detectar múltiples manos/personas
+    num_hands=20,  # Aumentado para detectar múltiples manos/personas
     min_hand_detection_confidence=0.5,
     min_hand_presence_confidence=0.5,
     min_tracking_confidence=0.5
